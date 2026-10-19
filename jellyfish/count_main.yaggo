@@ -28,6 +28,9 @@ option("out-counter-len") {
 option("both-strands", "C") {
   description "Count both strand, canonical representation"
   flag; off }
+option("presence-only") {
+  description "Only record presence of k-mers: sets --counter-len to 1 and ignores k-mers already seen"
+  flag; off }
 option("reprobes", "p") {
   description "Maximum number of reprobes"
   uint32; default "62" }

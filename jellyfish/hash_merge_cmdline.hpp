@@ -16,6 +16,7 @@ public:
   uint64_t                       out_buffer_size_arg;
   bool                           out_buffer_size_given;
   bool                           verbose_flag;
+  bool                           free_inputs_flag;
   std::vector<const char *>      input_arg;
   typedef std::vector<const char *>::iterator input_arg_it;
   typedef std::vector<const char *>::const_iterator input_arg_const_it;
@@ -23,7 +24,8 @@ public:
   enum {
     USAGE_OPT = 1000,
     OUT_COUNTER_LEN_OPT,
-    OUT_BUFFER_SIZE_OPT
+    OUT_BUFFER_SIZE_OPT,
+    FREE_INPUTS_OPT
   };
 
   merge_args() : 
@@ -31,7 +33,8 @@ public:
     output_arg("mer_counts_merged.jf"), output_given(false),
     out_counter_len_arg(4), out_counter_len_given(false),
     out_buffer_size_arg(10000000), out_buffer_size_given(false),
-    verbose_flag(false)
+    verbose_flag(false),
+    free_inputs_flag(false)
   { }
 
   merge_args(int argc, char* argv[]) :
@@ -39,7 +42,8 @@ public:
     output_arg("mer_counts_merged.jf"), output_given(false),
     out_counter_len_arg(4), out_counter_len_given(false),
     out_buffer_size_arg(10000000), out_buffer_size_given(false),
-    verbose_flag(false)
+    verbose_flag(false),
+    free_inputs_flag(false)
   { parse(argc, argv); }
 
   void parse(int argc, char* argv[]) {
@@ -49,6 +53,7 @@ public:
       {"out-counter-len", 1, 0, OUT_COUNTER_LEN_OPT},
       {"out-buffer-size", 1, 0, OUT_BUFFER_SIZE_OPT},
       {"verbose", 0, 0, 'v'},
+      {"free-inputs", 0, 0, FREE_INPUTS_OPT},
       {"help", 0, 0, 'h'},
       {"usage", 0, 0, USAGE_OPT},
       {"version", 0, 0, 'V'},
@@ -102,6 +107,9 @@ public:
       case 'v':
         verbose_flag = true;
         break;
+      case FREE_INPUTS_OPT:
+        free_inputs_flag = true;
+        break;
       }
     }
 
@@ -129,6 +137,7 @@ public:
   "     --out-counter-len=uint32             Length (in bytes) of counting field in output (4)\n" \
   "     --out-buffer-size=uint64             Size of output buffer per thread (10000000)\n" \
   " -v, --verbose                            Be verbose (false)\n" \
+  "     --free-inputs                        Release disk space of input files as they are consumed and delete them on success. Inputs are unusable afterwards, even if merge fails or is interrupted (false)\n" \
   "     --usage                              Usage\n" \
   " -h, --help                               This message\n" \
   " -V, --version                            Version"
@@ -149,6 +158,7 @@ public:
     os << "out_counter_len_given:" << out_counter_len_given << " out_counter_len_arg:" << out_counter_len_arg << "\n";
     os << "out_buffer_size_given:" << out_buffer_size_given << " out_buffer_size_arg:" << out_buffer_size_arg << "\n";
     os << "verbose_flag:" << verbose_flag << "\n";
+    os << "free_inputs_flag:" << free_inputs_flag << "\n";
     os << "input_arg:" << yaggo::vec_str(input_arg) << "\n";
   }
 private:

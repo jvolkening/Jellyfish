@@ -20,7 +20,13 @@
 #include <iostream>
 #include <fstream>
 #include <string.h>
+#include <string>
 #include <pthread.h>
+#include <fcntl.h>
+#include <unistd.h>
+#ifdef __linux__
+#include <linux/falloc.h>
+#endif
 #include <jellyfish/err.hpp>
 #include <jellyfish/mapped_file.hpp>
 #include <jellyfish/square_binary_matrix.hpp>
@@ -170,18 +176,23 @@ namespace jellyfish {
       size_t              size_mask;
       char               *buffer, *end_buffer, *ptr;
       char                dna_str[33];
+      std::string         path;
+      int                 free_fd;      // fd used to release consumed data, -1 if disabled
+      std::streamoff      freed;        // bytes at the start of the file already released
 
     public:
       key_t key;
       val_t val;
 
-      reader() { io = 0; buffer = 0; memset(dna_str, '\0', sizeof(dna_str)); }
-      explicit reader(std::string filename, size_t _buff_len = 10000000UL) { 
+      reader() : free_fd(-1), freed(0) { io = 0; buffer = 0; memset(dna_str, '\0', sizeof(dna_str)); }
+      explicit reader(std::string filename, size_t _buff_len = 10000000UL) :
+        free_fd(-1), freed(0) {
         initialize(filename, _buff_len);
       }
 
       void initialize(std::string filename, size_t _buff_len) {
         memset(dna_str, '\0', sizeof(dna_str)); 
+        path = filename;
         io = new std::ifstream(filename.c_str());
         io->read((char *)&header, sizeof(header));
         if(!io->good())
@@ -225,7 +236,27 @@ namespace jellyfish {
         size_mask = header.size - 1;
       }
 
+      /* Release the disk space of the part of the file already read
+       * (hole punching). The file becomes unusable. Returns false if
+       * it can't be enabled. If the file system turns out not to
+       * support it, the space is silently not released.
+       */
+      bool enable_free_consumed() {
+#if defined(__linux__) && defined(FALLOC_FL_PUNCH_HOLE)
+        if(free_fd >= 0)
+          return true;
+        free_fd = open(path.c_str(), O_WRONLY);
+        if(free_fd < 0)
+          return false;
+        return true;
+#else
+        return false;
+#endif
+      }
+
       ~reader() {
+        if(free_fd >= 0)
+          close(free_fd);
         if(io)
           delete io;
         if(buffer)
@@ -263,6 +294,25 @@ namespace jellyfish {
       uint64_t get_hash() const { return hash_matrix.times(key); }
       uint64_t get_pos() const { return hash_matrix.times(key) & size_mask; }
 
+      // Everything before the current read position has been consumed.
+      void free_consumed() {
+#if defined(__linux__) && defined(FALLOC_FL_PUNCH_HOLE)
+        std::streamoff pos = io->tellg();
+        if(pos < 0)
+          return;
+        pos &= ~(std::streamoff)4095; // Only whole pages
+        if(pos <= freed)
+          return;
+        if(fallocate(free_fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE,
+                     freed, pos - freed) != 0) {
+          close(free_fd);
+          free_fd = -1;
+          return;
+        }
+        freed = pos;
+#endif
+      }
+
       bool next() {
         while(true) {
           if(ptr <= end_buffer) {
@@ -275,6 +325,8 @@ namespace jellyfish {
 
           if(io->fail())
             return false;
+          if(free_fd >= 0)
+            free_consumed();
           io->read(buffer, buffer_len);
           //      if(record_len * (io->gcount() / record_len) != io->gcount())
           //        return false;

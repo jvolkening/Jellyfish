@@ -87,6 +87,7 @@ namespace jellyfish {
       size_t            *reprobes;
       SquareBinaryMatrix hash_matrix;
       SquareBinaryMatrix hash_inverse_matrix;
+      bool               presence_only; // add() does not increment keys already present
       struct header {
         uint64_t klen;
         uint64_t clen;
@@ -110,7 +111,8 @@ namespace jellyfish {
         mem_block(div_ceil(size, (size_t)offsets.get_block_len()) * offsets.get_block_word_len() * sizeof(word)),
         data((word *)mem_block.get_ptr()), reprobes(_reprobes),
         hash_matrix(key_len), 
-        hash_inverse_matrix(hash_matrix.init_random_inverse())
+        hash_inverse_matrix(hash_matrix.init_random_inverse()),
+        presence_only(false)
       {
         if(!data)
           throw ErrorAllocation(err::msg()  << "Failed to allocate " 
@@ -170,7 +172,8 @@ namespace jellyfish {
         offsets(key_off + bitsize(reprobe_limit.val() + 1), _val_len,
                 reprobe_limit.val() + 1),
         data((word *)map), reprobes(_reprobes),
-        hash_matrix(_hash_matrix), hash_inverse_matrix(_hash_inverse_matrix)
+        hash_matrix(_hash_matrix), hash_inverse_matrix(_hash_inverse_matrix),
+        presence_only(false)
       { }
 
       ~array() { }
@@ -179,6 +182,12 @@ namespace jellyfish {
       int lock() {
         return mem_block.lock();
       }
+
+      // In presence-only mode, add() only records that a key exists:
+      // the value of a key already present is left untouched. Meant to
+      // be used with a 1 bit value field.
+      void set_presence_only(bool v) { presence_only = v; }
+      bool get_presence_only() const { return presence_only; }
 
       void set_matrix(SquareBinaryMatrix &m) {
         if((uint_t)m.get_size() != key_len)
@@ -878,6 +887,14 @@ namespace jellyfish {
           return false;
         if(oval)
           *oval = !is_new;
+
+        // Presence only: nothing to increment for a key already seen
+        if(presence_only && !large && !is_new)
+          return true;
+
+        // Presence only: a new key gets the value 1 (fits the 1 bit counter)
+        if(presence_only && !large && val > 1)
+          val = 1;
 
         // Increment value
         word *vw = w + ao->val.woff;
