@@ -116,6 +116,10 @@ int merge_main(int argc, char *argv[])
       die << "Can't open k-mer database: " << e;
     }
 
+    if(args.free_inputs_flag && !iters[i].enable_free_consumed())
+      die << "Can't release disk space of '" << db_file
+          << "': --free-inputs requires Linux and write access to the input files";
+
     unsigned int len = iters[i].get_key_len();
     if(rklen != 0 && len != rklen)
       die << "Can't merge hashes of different key lengths";
@@ -238,5 +242,12 @@ int merge_main(int argc, char *argv[])
   }
   info.buffers[0].writer.update_stats_with(&out, unique, distinct, total, max_count);
   out.close();
+  if(args.free_inputs_flag) {
+    if(!out.good())
+      die << "Error writing '" << args.output_arg << "'. Inputs not deleted";
+    for(i = 0; i < num_hashes; i++)
+      if(unlink(args.input_arg[i]) != 0)
+        std::cerr << "Warning: can't delete '" << args.input_arg[i] << "'" << err::no << std::endl;
+  }
   return 0;
 }

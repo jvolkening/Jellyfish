@@ -7,6 +7,16 @@ Version 1.1
 
 * Support fasta and fastq formats.
 
+* count --presence-only: only record the presence of k-mers (1 bit
+  counter in memory, k-mers already seen are not incremented).
+  --out-counter-len still sets the width of the counter field in the
+  output.
+
+* merge --free-inputs: release the disk space of the input files as
+  they are consumed and delete them on success, so merging needs
+  little more than the size of the final database (Linux only; the
+  inputs are unusable if merge fails).
+
 * Support for counting 'q-mers', as defined by the Quake error
   correcting software (http://www.cbcb.umd.edu/software/quake/).
 

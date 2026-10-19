@@ -140,6 +140,7 @@ public:
                                     args->counter_len_arg, 
                                     args->reprobes_arg, 
                                     jellyfish::quadratic_reprobes);
+    ary->set_presence_only(args->presence_only_flag);
     if(args->matrix_given) {
       std::ifstream fd;
       fd.exceptions(std::ifstream::eofbit|std::ifstream::failbit|std::ifstream::badbit);
@@ -191,6 +192,7 @@ public:
                                     args->counter_len_arg, 
                                     args->reprobes_arg, 
                                     jellyfish::quadratic_reprobes);
+    ary->set_presence_only(args->presence_only_flag);
     if(args->matrix_given) {
       std::ifstream fd;
       fd.exceptions(std::ifstream::eofbit|std::ifstream::failbit|std::ifstream::badbit);
@@ -327,6 +329,15 @@ int count_main(int argc, char *argv[])
     die << "Invalid mer length '" << args.mer_len_arg
         << "'. It must be in [2, 31].";
 
+  if(args.presence_only_flag) {
+    if(args.quake_flag)
+      die << "Switch --presence-only is not supported with --quake";
+    if(args.counter_len_given && args.counter_len_arg != 1)
+      std::cerr << "Warning: --presence-only sets --counter-len to 1. Ignoring --counter-len="
+                << args.counter_len_arg << std::endl;
+    args.counter_len_arg = 1;
+  }
+
   Time start;
   mer_counting_base *counter;
   if(!args.buffers_given)
@@ -335,6 +346,9 @@ int count_main(int argc, char *argv[])
   if(args.quake_flag) {
     counter = new mer_counting_quake(args.file_arg, args);
   } else if(ceilLog2((unsigned long)args.size_arg) > 2 * (unsigned long)args.mer_len_arg) {
+    if(args.presence_only_flag)
+      die << "Switch --presence-only is not supported with direct indexing "
+          << "(hash size too large for the mer length). Use a smaller --size.";
     if(args.min_quality_given)
       counter = new mer_counting_qual_fasta_direct(args.file_arg, args);
     else

@@ -285,6 +285,7 @@ public:
   uint32_t                       out_counter_len_arg;
   bool                           out_counter_len_given;
   bool                           both_strands_flag;
+  bool                           presence_only_flag;
   uint32_t                       reprobes_arg;
   bool                           reprobes_given;
   bool                           raw_flag;
@@ -325,6 +326,7 @@ public:
     FULL_HELP_OPT,
     USAGE_OPT,
     OUT_COUNTER_LEN_OPT,
+    PRESENCE_ONLY_OPT,
     BOTH_OPT,
     QUALITY_START_OPT,
     MIN_QUALITY_OPT,
@@ -348,6 +350,7 @@ public:
     counter_len_arg(7), counter_len_given(false),
     out_counter_len_arg(4), out_counter_len_given(false),
     both_strands_flag(false),
+    presence_only_flag(false),
     reprobes_arg(62), reprobes_given(false),
     raw_flag(false),
     both_flag(false),
@@ -379,6 +382,7 @@ public:
     counter_len_arg(7), counter_len_given(false),
     out_counter_len_arg(4), out_counter_len_given(false),
     both_strands_flag(false),
+    presence_only_flag(false),
     reprobes_arg(62), reprobes_given(false),
     raw_flag(false),
     both_flag(false),
@@ -411,6 +415,7 @@ public:
       {"counter-len", 1, 0, 'c'},
       {"out-counter-len", 1, 0, OUT_COUNTER_LEN_OPT},
       {"both-strands", 0, 0, 'C'},
+      {"presence-only", 0, 0, PRESENCE_ONLY_OPT},
       {"reprobes", 1, 0, 'p'},
       {"raw", 0, 0, 'r'},
       {"both", 0, 0, BOTH_OPT},
@@ -499,6 +504,9 @@ public:
         break;
       case 'C':
         both_strands_flag = true;
+        break;
+      case PRESENCE_ONLY_OPT:
+        presence_only_flag = true;
         break;
       case 'p':
         reprobes_given = true;
@@ -614,6 +622,7 @@ public:
   " -c, --counter-len=Length in bits         Length of counting field (7)\n" \
   "     --out-counter-len=Length in bytes    Length of counter field in output (4)\n" \
   " -C, --both-strands                       Count both strand, canonical representation (false)\n" \
+  "     --presence-only                      Only record presence of k-mers: sets --counter-len to 1 and ignores k-mers already seen (false)\n" \
   " -p, --reprobes=uint32                    Maximum number of reprobes (62)\n" \
   " -r, --raw                                Write raw database (false)\n" \
   " -q, --quake                              Quake compatibility mode (false)\n" \
@@ -658,6 +667,7 @@ public:
     os << "counter_len_given:" << counter_len_given << " counter_len_arg:" << counter_len_arg << "\n";
     os << "out_counter_len_given:" << out_counter_len_given << " out_counter_len_arg:" << out_counter_len_arg << "\n";
     os << "both_strands_flag:" << both_strands_flag << "\n";
+    os << "presence_only_flag:" << presence_only_flag << "\n";
     os << "reprobes_given:" << reprobes_given << " reprobes_arg:" << reprobes_arg << "\n";
     os << "raw_flag:" << raw_flag << "\n";
     os << "both_flag:" << both_flag << "\n";

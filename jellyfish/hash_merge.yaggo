@@ -19,6 +19,9 @@ option("out-buffer-size") {
 option("verbose", "v") {
   description "Be verbose"
   flag; off }
+option("free-inputs") {
+  description "Release disk space of input files as they are consumed and delete them on success. Inputs are unusable afterwards, even if merge fails or is interrupted"
+  flag; off }
 arg("input") {
   description "Jellyfish hash"
   c_string; multiple; at_least 2 }
