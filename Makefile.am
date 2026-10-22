@@ -148,7 +148,7 @@ TESTS = tests/generate_sequence.sh tests/serial_hashing.sh		\
         tests/parallel_fastq_sequence_hashing.sh			\
         tests/from_stream_fastq.sh tests/merge.sh tests/min_qual.sh	\
         tests/big.sh tests/parsers.sh tests/small.sh			\
-        tests/parallel_fastq_direct_indexing.sh
+        tests/parallel_fastq_direct_indexing.sh tests/step.sh
 
 EXTRA_DIST += $(TESTS)
 clean-local: clean-local-check

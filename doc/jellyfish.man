@@ -217,6 +217,9 @@ Options (default value in (), *required):
 \fB--reprobes\fP\fI=uint32\fP
  Maximum number of reprobes (62) 
 .TP
+\fB--step\fP\fI=uint32\fP
+ Count every step-th k-mer window (1). Every base is still read, but only every step-th window of each run of valid bases (restarting at each sequence start or N) is counted, so counts differ from full sliding-window counts. Not supported with --quake. 
+.TP
 \fB\-r\fP,\fB--raw\fP
  Write raw database (false) 
 .TP

@@ -29,6 +29,9 @@ namespace jellyfish {
       }
       new_seq->end = new_seq->start + buffer_size;
       char *start = new_seq->start;
+      if(!have_seam)
+        run = 0;
+      new_seq->phase = window_skip(run, mer_len, step);
       if(have_seam) {
         have_seam = false;
         //        mem_copy(start, seam, mer_len - 1);
@@ -42,6 +45,22 @@ namespace jellyfish {
         have_seam = true;
         //        mem_copy(seam, new_seq->end - mer_len + 1, mer_len - 1);
         memcpy(seam, new_seq->end - mer_len + 1, mer_len - 1);
+        if(step > 1) {
+          // Length of the run of valid bases ending at the end of the new data
+          uint64_t n = 0;
+          const char *p = new_seq->end;
+          while(p > start) {
+            const uint_t c = dna_codes[(uint_t)*--p];
+            if(c == CODE_IGNORE)
+              continue;
+            if(c & CODE_NOT_DNA) {
+              run = 0;
+              break;
+            }
+            ++n;
+          }
+          run += n;
+        }
         write_release(new_seq);
         new_seq = 0;
       }

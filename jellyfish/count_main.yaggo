@@ -34,6 +34,9 @@ option("presence-only") {
 option("reprobes", "p") {
   description "Maximum number of reprobes"
   uint32; default "62" }
+option("step") {
+  description "Count every step-th k-mer window"
+  uint32; default "1" }
 option("raw", "r") {
   description "Write raw database"
   flag; off }

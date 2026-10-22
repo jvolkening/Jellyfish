@@ -288,6 +288,8 @@ public:
   bool                           presence_only_flag;
   uint32_t                       reprobes_arg;
   bool                           reprobes_given;
+  uint32_t                       step_arg;
+  bool                           step_given;
   bool                           raw_flag;
   bool                           both_flag;
   bool                           quake_flag;
@@ -327,6 +329,7 @@ public:
     USAGE_OPT,
     OUT_COUNTER_LEN_OPT,
     PRESENCE_ONLY_OPT,
+    STEP_OPT,
     BOTH_OPT,
     QUALITY_START_OPT,
     MIN_QUALITY_OPT,
@@ -352,6 +355,7 @@ public:
     both_strands_flag(false),
     presence_only_flag(false),
     reprobes_arg(62), reprobes_given(false),
+    step_arg(1), step_given(false),
     raw_flag(false),
     both_flag(false),
     quake_flag(false),
@@ -384,6 +388,7 @@ public:
     both_strands_flag(false),
     presence_only_flag(false),
     reprobes_arg(62), reprobes_given(false),
+    step_arg(1), step_given(false),
     raw_flag(false),
     both_flag(false),
     quake_flag(false),
@@ -417,6 +422,7 @@ public:
       {"both-strands", 0, 0, 'C'},
       {"presence-only", 0, 0, PRESENCE_ONLY_OPT},
       {"reprobes", 1, 0, 'p'},
+      {"step", 1, 0, STEP_OPT},
       {"raw", 0, 0, 'r'},
       {"both", 0, 0, BOTH_OPT},
       {"quake", 0, 0, 'q'},
@@ -507,6 +513,11 @@ public:
         break;
       case PRESENCE_ONLY_OPT:
         presence_only_flag = true;
+        break;
+      case STEP_OPT:
+        step_given = true;
+        step_arg = conv_uint<uint32_t>((const char*)optarg, err, false);
+        CHECK_ERR(uint32_t, optarg, "    --step=uint32")
         break;
       case 'p':
         reprobes_given = true;
@@ -624,6 +635,7 @@ public:
   " -C, --both-strands                       Count both strand, canonical representation (false)\n" \
   "     --presence-only                      Only record presence of k-mers: sets --counter-len to 1 and ignores k-mers already seen (false)\n" \
   " -p, --reprobes=uint32                    Maximum number of reprobes (62)\n" \
+  "     --step=uint32                       Count every step-th k-mer window (1)\n" \
   " -r, --raw                                Write raw database (false)\n" \
   " -q, --quake                              Quake compatibility mode (false)\n" \
   "     --quality-start=uint32               Starting ASCII for quality values (64)\n" \
@@ -669,6 +681,7 @@ public:
     os << "both_strands_flag:" << both_strands_flag << "\n";
     os << "presence_only_flag:" << presence_only_flag << "\n";
     os << "reprobes_given:" << reprobes_given << " reprobes_arg:" << reprobes_arg << "\n";
+    os << "step_given:" << step_given << " step_arg:" << step_arg << "\n";
     os << "raw_flag:" << raw_flag << "\n";
     os << "both_flag:" << both_flag << "\n";
     os << "quake_flag:" << quake_flag << "\n";
