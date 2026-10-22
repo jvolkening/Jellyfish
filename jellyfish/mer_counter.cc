@@ -175,6 +175,7 @@ public:
     }
     hash->set_dumper(dumper);
     parser->set_canonical(args->both_strands_flag);
+    parser->set_step(args->step_arg);
   }
 };
 
@@ -224,6 +225,7 @@ public:
     }
     hash->set_dumper(dumper);
     parser->set_canonical(args->both_strands_flag);
+    parser->set_step(args->step_arg);
   }
 };
 
@@ -258,6 +260,7 @@ public:
     }
     hash->set_dumper(dumper);
     parser->set_canonical(args->both_strands_flag);
+    parser->set_step(args->step_arg);
   }
 };
 
@@ -292,6 +295,7 @@ public:
     }
     hash->set_dumper(dumper);
     parser->set_canonical(args->both_strands_flag);
+    parser->set_step(args->step_arg);
   }
 };
 
@@ -337,6 +341,11 @@ int count_main(int argc, char *argv[])
                 << args.counter_len_arg << std::endl;
     args.counter_len_arg = 1;
   }
+
+  if(args.step_arg < 1)
+    die << "Invalid step '" << args.step_arg << "'. It must be a positive integer.";
+  if(args.step_arg > 1 && args.quake_flag)
+    die << "Switch --step is not supported with --quake";
 
   Time start;
   mer_counting_base *counter;

@@ -40,6 +40,8 @@ namespace jellyfish {
     const char              quality_start;
     const char              min_q;
     bool                    canonical;
+    uint_t                  step;
+    uint64_t                run; // Valid bases since last reset, up to end of last released buffer
     seq_qual_parser        *fparser;
 
   public:
@@ -56,6 +58,7 @@ namespace jellyfish {
     ~parse_qual_dna() { }
 
     void set_canonical(bool v = true) { canonical = v; }
+    void set_step(uint_t s) { step = s; }
     virtual void fill();
 
     class thread {
@@ -67,6 +70,8 @@ namespace jellyfish {
       uint_t          cmlen;
       const bool      canonical;
       const char      q_thresh;
+      const uint_t    step;
+      uint_t          skip;
       uint64_t        distinct, total;
       typedef         void (*error_reporter)(std::string& err);
       error_reporter  error_report;
@@ -78,7 +83,7 @@ namespace jellyfish {
         kmer(0), rkmer(0), masq((1UL << (2 * mer_len)) - 1),
         cmlen(0), canonical(parser->canonical),
         q_thresh(_qs + _min_q),
-        distinct(0), total(0), error_report(0) { }
+        step(parser->step), skip(0), distinct(0), total(0), error_report(0) { }
 
       uint64_t get_distinct() const { return distinct; }
       uint64_t get_total() const { return total; }
@@ -89,6 +94,7 @@ namespace jellyfish {
         while((sequence = parser->next())) {
           const char         *start = sequence->start;
           const char * const  end   = sequence->end;
+          skip = sequence->phase;
           while(start < end) {
             uint_t     c = dna_codes[(uint_t)*start++];
             const char q = *start++;
@@ -102,6 +108,7 @@ namespace jellyfish {
               // Fall through
             case CODE_RESET:
               cmlen = kmer = rkmer = 0;
+              skip = 0;
               break;
 
             default:
@@ -109,6 +116,11 @@ namespace jellyfish {
               rkmer = (rkmer >> 2) | ((0x3 - c) << lshift);
               if(++cmlen >= mer_len) {
                 cmlen = mer_len;
+                if(skip) {
+                  --skip;
+                  break;
+                }
+                skip = step - 1;
                 typename T::val_type oval;
                 if(canonical)
                   counter->add(kmer < rkmer ? kmer : rkmer, 1, &oval);

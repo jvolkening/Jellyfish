@@ -255,6 +255,10 @@ Options (default value in (), *required):
 </dt>
 <dd> Maximum number of reprobes (62) 
 </dd>
+<dt><b>--step</b><i>=uint32</i>
+</dt>
+<dd> Count every step-th k-mer window (1). Every base is still read, but only every step-th window of each run of valid bases (restarting at each sequence start or N) is counted, so counts differ from full sliding-window counts. Not supported with --quake. 
+</dd>
 <dt><b>-r</b>,<b>--raw</b>
 </dt>
 <dd> Write raw database (false) 

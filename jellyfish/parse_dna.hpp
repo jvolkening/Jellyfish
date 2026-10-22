@@ -38,6 +38,8 @@ namespace jellyfish {
     char                       *seam;
     allocators::mmap            buffer_data;
     bool                        canonical;
+    uint_t                      step;
+    uint64_t                    run; // Valid bases since last reset, up to end of last released buffer
     sequence_parser            *fparser;
 
   public:
@@ -85,6 +87,7 @@ namespace jellyfish {
     }
 
     void set_canonical(bool v = true) { canonical = v; }
+    void set_step(uint_t s) { step = s; }
     virtual void fill();
 
     class thread {
@@ -95,6 +98,8 @@ namespace jellyfish {
       const uint64_t  masq;
       uint_t          cmlen;
       const bool      canonical;
+      const uint_t    step;
+      uint_t          skip;
       uint64_t        distinct, total;
       typedef         void (*error_reporter)(std::string& err);
       error_reporter  error_report;
@@ -105,7 +110,7 @@ namespace jellyfish {
         mer_len(_parser->mer_len), lshift(2 * (mer_len - 1)),
         kmer(0), rkmer(0), masq((1UL << (2 * mer_len)) - 1),
         cmlen(0), canonical(parser->canonical),
-        distinct(0), total(0), error_report(0) {}
+        step(parser->step), skip(0), distinct(0), total(0), error_report(0) {}
 
       uint64_t get_uniq() const { return 0; }
       uint64_t get_distinct() const { return distinct; }
@@ -117,6 +122,7 @@ namespace jellyfish {
         while((sequence = parser->next())) {
           const char         *start = sequence->start;
           const char * const  end   = sequence->end;
+          skip = sequence->phase;
           while(start < end) {
             const uint_t c = dna_codes[(uint_t)*start++];
             switch(c) {
@@ -126,6 +132,7 @@ namespace jellyfish {
               // Fall through
             case CODE_RESET:
               cmlen = kmer = rkmer = 0;
+              skip = 0;
               break;
 
             default:
@@ -133,6 +140,11 @@ namespace jellyfish {
               rkmer = (rkmer >> 2) | ((0x3 - c) << lshift);
               if(++cmlen >= mer_len) {
                 cmlen  = mer_len;
+                if(skip) {
+                  --skip;
+                  break;
+                }
+                skip = step - 1;
                 typename T::val_type oval;
                 if(canonical)
                   counter->add(kmer < rkmer ? kmer : rkmer, 1, &oval);
@@ -175,7 +187,8 @@ jellyfish::parse_dna::parse_dna(T _files_start, T _files_end,
   double_fifo_input<sequence_parser::sequence_t>(nb_buffers), mer_len(_mer_len), 
   buffer_size(allocators::mmap::round_to_page(_buffer_size)),
   files(_files_start, _files_end), current_file(files.begin()),
-  have_seam(false), buffer_data(buffer_size * nb_buffers), canonical(false)
+  have_seam(false), buffer_data(buffer_size * nb_buffers), canonical(false),
+  step(1), run(0)
 {
   seam        = new char[mer_len];
   memset(seam, 'A', mer_len);

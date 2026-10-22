@@ -7,6 +7,11 @@ Version 1.1
 
 * Support fasta and fastq formats.
 
+* count --step N: only count every N-th k-mer window of each run of
+  valid bases (default 1: every window). The phase is preserved across
+  parser buffer boundaries. Counts differ from full sliding-window
+  counts. Not supported with --quake.
+
 * count --presence-only: only record the presence of k-mers (1 bit
   counter in memory, k-mers already seen are not incremented).
   --out-counter-len still sets the width of the counter field in the

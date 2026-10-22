@@ -34,6 +34,7 @@ namespace jellyfish {
     struct sequence_t {
       char *start;
       char *end;
+      uint64_t phase; // Number of windows to skip before the first counted one
     };
     static sequence_parser *new_parser(const char *path);
 

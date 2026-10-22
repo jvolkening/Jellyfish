@@ -24,7 +24,8 @@ namespace jellyfish {
     buffer_size(allocators::mmap::round_to_page(_buffer_size)),
     files(_files), current_file(files.begin()),
     have_seam(false), buffer_data(buffer_size * nb_buffers),
-    quality_start(_qs), min_q(_min_q), canonical(false)
+    quality_start(_qs), min_q(_min_q), canonical(false),
+    step(1), run(0)
   {
     seam        = new char[2*mer_len];
 
@@ -48,6 +49,9 @@ namespace jellyfish {
       }
       new_seq->end = new_seq->start + buffer_size;
       char *start = new_seq->start;
+      if(!have_seam)
+        run = 0;
+      new_seq->phase = window_skip(run, mer_len, step);
       if(have_seam) {
         have_seam = false;
         memcpy(start, seam, 2 * (mer_len - 1));
@@ -57,6 +61,26 @@ namespace jellyfish {
       if(new_seq->end > new_seq->start + 2 * mer_len) {
         have_seam = true;
         memcpy(seam, new_seq->end - 2 * (mer_len - 1), 2 * (mer_len - 1));
+        if(step > 1) {
+          // Length of the run of valid bases ending at the end of the new data
+          const char q_thresh = quality_start + min_q;
+          uint64_t n = 0;
+          const char *p = new_seq->end;
+          while(p > start) {
+            const char q = *--p;
+            uint_t c = dna_codes[(uint_t)*--p];
+            if(q < q_thresh)
+              c = CODE_RESET;
+            if(c == CODE_IGNORE)
+              continue;
+            if(c & CODE_NOT_DNA) {
+              run = 0;
+              break;
+            }
+            ++n;
+          }
+          run += n;
+        }
         write_release(new_seq);
         new_seq = 0;
       }
